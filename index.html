@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéColeccionista: 151 & Surging Sparks</title>
+    <style>
+        :root {
+            --primary: #e3350d;
+            --bg: #f4f4f4;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        h1 { text-align: center; color: var(--primary); }
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        button { padding: 10px 20px; cursor: pointer; border: none; background: #ccc; border-radius: 5px; font-weight: bold; }
+        button.active { background: var(--primary); color: white; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+            max-width: 1000px; margin: 0 auto;
+        }
+
+        .card-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .card-item:hover { transform: translateY(-5px); }
+
+        /* Estilo del cuadrado con el tick */
+        .checkbox-container {
+            display: block;
+            position: relative;
+            padding-left: 35px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            user-select: none;
+        }
+
+        .checkbox-container input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+
+        .checkmark {
+            position: absolute;
+            top: 0; left: 0;
+            height: 25px; width: 25px;
+            background-color: #eee;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .checkbox-container:hover input ~ .checkmark { background-color: #ccc; }
+        .checkbox-container input:checked ~ .checkmark { background-color: #4CAF50; border-color: #4CAF50; }
+
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 9px; top: 5px;
+            width: 5px; height: 10px;
+            border: solid white;
+            border-width: 0 3px 3px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-container input:checked ~ .checkmark:after { display: block; }
+        
+        .card-number { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .card-name { font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>PokéColeccionista</h1>
+    
+    <div class="tabs">
+        <button onclick="showSet('151')" id="btn151" class="active">Pokémon 151</button>
+        <button onclick="showSet('surging')" id="btnsurging">Surging Sparks</button>
+    </div>
+
+    <div id="cardGrid" class="grid"></div>
+
+    <script>
+        // Configuración de las colecciones (puedes añadir los nombres reales aquí)
+        const sets = {
+            '151': { count: 165, prefix: '151' },
+            'surging': { count: 191, prefix: 'SS' }
+        };
+
+        let currentSet = '151';
+
+        function renderCards() {
+            const grid = document.getElementById('cardGrid');
+            grid.innerHTML = '';
+            const setInfo = sets[currentSet];
+
+            for (let i = 1; i <= setInfo.count; i++) {
+                const cardId = `${setInfo.prefix}-${i}`;
+                const isChecked = localStorage.getItem(cardId) === 'true';
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card-item';
+                cardDiv.innerHTML = `
+                    <span class="card-number">#${i.toString().padStart(3, '0')}</span>
+                    <span class="card-name">Carta ${i}</span>
+                    <label class="checkbox-container">
+                        ¡La tengo!
+                        <input type="checkbox" id="${cardId}" ${isChecked ? 'checked' : ''} onchange="saveCard('${cardId}')">
+                        <span class="checkmark"></span>
+                    </label>
+                `;
+                grid.appendChild(cardDiv);
+            }
+        }
+
+        function saveCard(id) {
+            const checkbox = document.getElementById(id);
+            localStorage.setItem(id, checkbox.checked);
+        }
+
+        function showSet(setName) {
+            currentSet = setName;
+            document.getElementById('btn151').classList.toggle('active', setName === '151');
+            document.getElementById('btnsurging').classList.toggle('active', setName === 'surging');
+            renderCards();
+        }
+
+        // Carga inicial
+        renderCards();
+    </script>
+</body>
+</html>
