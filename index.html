@@ -3,136 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokémonList: 151 & Surging Sparks</title>
+    <title>PokéTracker Pro - Base de Datos Persistente</title>
     <style>
         :root {
-            --primary: #e3350d;
-            --bg: #f4f4f4;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        h1 { text-align: center; color: var(--primary); }
-        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        button { padding: 10px 20px; cursor: pointer; border: none; background: #ccc; border-radius: 5px; font-weight: bold; }
-        button.active { background: var(--primary); color: white; }
-        
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
-            gap: 15px; 
-            max-width: 1000px; margin: 0 auto;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent: #bb86fc;
+            --text: #ffffff;
         }
 
-        .card-item {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Panel de Control */
+        .controls {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            background: #2c2c2c;
+            color: white;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--accent);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #000;
+        }
+
+        button:hover { filter: brightness(1.1); }
+
+        /* Grid de Cartas */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .card-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #333;
             transition: transform 0.2s;
         }
 
-        .card-item:hover { transform: translateY(-5px); }
+        .card-container:hover { transform: translateY(-5px); border-color: var(--accent); }
 
-        .checkbox-container {
+        .card-img {
+            width: 100%;
+            height: auto;
             display: block;
-            position: relative;
-            padding-left: 35px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            user-select: none;
         }
 
-        .checkbox-container input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .card-info {
+            padding: 10px;
+        }
 
-        .checkmark {
-            position: absolute;
-            top: 0; left: 0;
-            height: 25px; width: 25px;
-            background-color: #eee;
-            border: 2px solid #ddd;
+        .card-title {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: #aaa;
+        }
+
+        .card-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Variantes (Checkboxes) */
+        .variants {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .variant-tag {
+            font-size: 0.8em;
+            background: #333;
+            padding: 4px 8px;
             border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid transparent;
         }
 
-        .checkbox-container:hover input ~ .checkmark { background-color: #ccc; }
-        .checkbox-container input:checked ~ .checkmark { background-color: #4CAF50; border-color: #4CAF50; }
-
-        .checkmark:after {
-            content: "";
-            position: absolute;
-            display: none;
-            left: 9px; top: 5px;
-            width: 5px; height: 10px;
-            border: solid white;
-            border-width: 0 3px 3px 0;
-            transform: rotate(45deg);
+        .variant-tag.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: bold;
         }
 
-        .checkbox-container input:checked ~ .checkmark:after { display: block; }
+        /* Loading */
+        #loading { display: none; text-align: center; margin: 20px; }
         
-        .card-number { font-size: 12px; color: #666; margin-bottom: 5px; }
-        .card-name { font-weight: bold; text-align: center; }
+        .stats { font-size: 0.8rem; margin-top: 5px; color: #888; }
     </style>
 </head>
 <body>
 
-    <h1>Pokémon List</h1>
-    
-    <div class="tabs">
-        <button onclick="showSet('151')" id="btn151" class="active">Pokémon 151</button>
-        <button onclick="showSet('surging')" id="btnsurging">Surging Sparks</button>
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Buscar carta (Ej: Pikachu, Charizard, Energy, Trainer)...">
+        <button onclick="searchCards()">Buscar</button>
+        <div id="collectionStats" style="margin-left: auto; align-self: center;">Colección: 0 cartas</div>
     </div>
 
-    <div id="cardGrid" class="grid"></div>
+    <div id="loading">Cargando datos de la API...</div>
+    <div class="grid" id="cardGrid"></div>
 
-    <script>
-        // Configuración de las colecciones (puedes añadir los nombres reales aquí)
-        const sets = {
-            '151': { count: 165, prefix: '151' },
-            'surging': { count: 191, prefix: 'SS' }
-        };
+<script>
+    // --- LÓGICA DEL SISTEMA ---
 
-        let currentSet = '151';
+    // 1. Base de datos local (Tu colección guardada)
+    // Estructura: { "card_id": ["normal", "holo"] }
+    let myCollection = JSON.parse(localStorage.getItem('pokeCollection')) || {};
 
-        function renderCards() {
-            const grid = document.getElementById('cardGrid');
-            grid.innerHTML = '';
-            const setInfo = sets[currentSet];
+    const apiBase = "https://api.pokemontcg.io/v2/cards";
+    // NOTA: Sin API Key tienes un límite de peticiones. Para uso intensivo, consigue una gratis en pokemontcg.io
 
-            for (let i = 1; i <= setInfo.count; i++) {
-                const cardId = `${setInfo.prefix}-${i}`;
-                const isChecked = localStorage.getItem(cardId) === 'true';
+    // Variantes posibles para marcar
+    const variants = [
+        { id: 'normal', label: 'Normal' },
+        { id: 'holo', label: 'Holo' },
+        { id: 'reverse', label: 'Reverse' },
+        { id: 'masterball', label: 'Master Ball' }, // Para set 151
+        { id: 'first_ed', label: '1ª Ed.' }
+    ];
 
-                const cardDiv = document.createElement('div');
-                cardDiv.className = 'card-item';
-                cardDiv.innerHTML = `
-                    <span class="card-number">#${i.toString().padStart(3, '0')}</span>
-                    <span class="card-name">Carta ${i}</span>
-                    <label class="checkbox-container">
-                        ¡La tengo!
-                        <input type="checkbox" id="${cardId}" ${isChecked ? 'checked' : ''} onchange="saveCard('${cardId}')">
-                        <span class="checkmark"></span>
-                    </label>
-                `;
-                grid.appendChild(cardDiv);
+    // 2. Función de búsqueda en la API
+    async function searchCards() {
+        const query = document.getElementById('searchInput').value;
+        const grid = document.getElementById('cardGrid');
+        const loader = document.getElementById('loading');
+
+        if (!query) return;
+
+        grid.innerHTML = '';
+        loader.style.display = 'block';
+
+        try {
+            // Buscamos por nombre. Se puede ampliar a 'set.id', 'types', etc.
+            const response = await fetch(`${apiBase}?q=name:"${query}*"&pageSize=20`);
+            const data = await response.json();
+            
+            loader.style.display = 'none';
+            renderCards(data.data);
+        } catch (error) {
+            console.error(error);
+            loader.innerText = "Error al conectar con la API.";
+        }
+    }
+
+    // 3. Renderizado de cartas
+    function renderCards(cards) {
+        const grid = document.getElementById('cardGrid');
+
+        if(!cards || cards.length === 0) {
+            grid.innerHTML = '<p>No se encontraron cartas.</p>';
+            return;
+        }
+
+        cards.forEach(card => {
+            const el = document.createElement('div');
+            el.className = 'card-container';
+            
+            // Verificamos qué variantes ya tienes guardadas
+            const savedVariants = myCollection[card.id] || [];
+
+            // HTML de la carta
+            let variantsHTML = '';
+            variants.forEach(v => {
+                const isActive = savedVariants.includes(v.id) ? 'active' : '';
+                variantsHTML += `<div class="variant-tag ${isActive}" 
+                                onclick="toggleVariant('${card.id}', '${v.id}', this)">
+                                ${v.label}
+                               </div>`;
+            });
+
+            el.innerHTML = `
+                <img src="${card.images.small}" class="card-img" loading="lazy" alt="${card.name}">
+                <div class="card-info">
+                    <div class="card-title">${card.set.name} (${card.rarity || 'Common'})</div>
+                    <div class="card-name">${card.name}</div>
+                    <div class="variants">${variantsHTML}</div>
+                </div>
+            `;
+            grid.appendChild(el);
+        });
+    }
+
+    // 4. Lógica de Guardado (Persistencia)
+    function toggleVariant(cardId, variantType, element) {
+        // Inicializar array si la carta es nueva en la colección
+        if (!myCollection[cardId]) {
+            myCollection[cardId] = [];
+        }
+
+        const index = myCollection[cardId].indexOf(variantType);
+
+        if (index === -1) {
+            // Añadir
+            myCollection[cardId].push(variantType);
+            element.classList.add('active');
+        } else {
+            // Quitar
+            myCollection[cardId].splice(index, 1);
+            element.classList.remove('active');
+            
+            // Si no quedan variantes, borramos la key para ahorrar espacio
+            if (myCollection[cardId].length === 0) {
+                delete myCollection[cardId];
             }
         }
 
-        function saveCard(id) {
-            const checkbox = document.getElementById(id);
-            localStorage.setItem(id, checkbox.checked);
-        }
+        saveToDisk();
+    }
 
-        function showSet(setName) {
-            currentSet = setName;
-            document.getElementById('btn151').classList.toggle('active', setName === '151');
-            document.getElementById('btnsurging').classList.toggle('active', setName === 'surging');
-            renderCards();
-        }
+    function saveToDisk() {
+        // Guardamos todo el objeto JSON en el almacenamiento del navegador
+        localStorage.setItem('pokeCollection', JSON.stringify(myCollection));
+        updateStats();
+    }
 
-        renderCards();
-    </script>
+    function updateStats() {
+        const count = Object.keys(myCollection).length;
+        document.getElementById('collectionStats').innerText = `Colección: ${count} cartas únicas`;
+    }
+
+    // Cargar estadísticas al inicio
+    updateStats();
+
+    // Habilitar Enter para buscar
+    document.getElementById('searchInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') searchCards();
+    });
+
+</script>
 </body>
 </html>
